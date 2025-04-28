@@ -15,7 +15,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
+import com.priem.taskmanagementapp.data.database.TaskDatabase
+import com.priem.taskmanagementapp.repository.TaskRepository
 import com.priem.taskmanagementapp.ui.TaskEditorActivity
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,6 +27,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             TaskManagementAppTheme {
                 MainScreen()
+            }
+        }
+        lifecycleScope.launch {
+            val dao = TaskDatabase.getDatabase(this@MainActivity).taskDao()
+            val repository = TaskRepository(dao)
+            if (!repository.getAllUsers().value.isNullOrEmpty() && !repository.getAllMessages().value.isNullOrEmpty()){
+                repository.insertDummyUsers()
+                repository.insertDummyMessages()
             }
         }
     }

@@ -34,6 +34,43 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
         _taskLabels.value = labels
     }
 
+    // Calendar Fragment
+    private val _taskDueTimestamp = androidx.lifecycle.MutableLiveData<Long?>()
+    val taskDueTimestamp: androidx.lifecycle.LiveData<Long?> = _taskDueTimestamp
+
+    fun setDueTimestamp(timestamp: Long) {
+        _taskDueTimestamp.value = timestamp
+    }
+
+    // Time Fragment
+    private val _taskDueTime = androidx.lifecycle.MutableLiveData<String?>()
+    val taskDueTime: androidx.lifecycle.LiveData<String?> = _taskDueTime
+
+    fun setDueTime(time: String) {
+        _taskDueTime.value = time
+    }
+
+    // Followers Fragment
+    private val _taskFollowers = androidx.lifecycle.MutableLiveData<List<Long>>()
+    val taskFollowers: androidx.lifecycle.LiveData<List<Long>> = _taskFollowers
+
+    fun setFollowers(followerIds: List<Long>) {
+        _taskFollowers.value = followerIds
+    }
+
+    suspend fun insertTaskFollowerCrossRef(taskId: Long, userId: Long) {
+        repository.insertTaskFollowerCrossRef(taskId, userId)
+    }
+
+
+    // Priority Fragment
+    private val _taskPriority = androidx.lifecycle.MutableLiveData<String>("LOW")
+    val taskPriority: androidx.lifecycle.LiveData<String> = _taskPriority
+
+    fun setTaskPriority(priority: String) {
+        _taskPriority.value = priority
+    }
+
 
 
     val allTasks: LiveData<List<Task>> = repository.allTasks

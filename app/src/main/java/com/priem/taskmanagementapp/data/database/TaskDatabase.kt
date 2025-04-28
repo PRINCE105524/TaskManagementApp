@@ -7,16 +7,22 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.priem.taskmanagementapp.data.dao.TaskDao
 import com.priem.taskmanagementapp.data.entity.Label
+import com.priem.taskmanagementapp.data.entity.Message
 import com.priem.taskmanagementapp.data.entity.Task
+import com.priem.taskmanagementapp.data.entity.TaskFollowerCrossRef
 import com.priem.taskmanagementapp.data.entity.TaskLabelCrossRef
+import com.priem.taskmanagementapp.data.entity.User
 
 @Database(
     entities = [
         Task::class,
         Label::class,
-        TaskLabelCrossRef::class
+        TaskLabelCrossRef::class,
+        User::class,
+        TaskFollowerCrossRef::class,
+        Message::class
     ],
-    version = 1
+    version = 2
 )
 abstract class TaskDatabase : RoomDatabase() {
 
