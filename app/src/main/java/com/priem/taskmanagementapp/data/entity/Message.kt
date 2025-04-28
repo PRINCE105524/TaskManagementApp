@@ -10,5 +10,8 @@ data class Message(
     val chatId: Long = 0,
     val senderId: Long = 0,
     val content: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val contentType: String = "TEXT", // TEXT or TASK
+    val contentJson: String? = null   // for storing task json
 )
+

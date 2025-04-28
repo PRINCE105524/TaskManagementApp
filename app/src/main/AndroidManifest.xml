@@ -17,11 +17,15 @@
             android:name=".ui.TaskEditorActivity"
             android:theme="@style/Theme.TaskManagementApp.Material"/>
 
+        <activity android:name=".ui.TaskDetailsActivity"
+            android:theme="@style/Theme.TaskManagementApp.Material" />
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.TaskManagementApp">
+            android:theme="@style/Theme.TaskManagementApp.Material">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

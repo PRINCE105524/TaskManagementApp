@@ -14,7 +14,9 @@ import com.priem.taskmanagementapp.repository.TaskRepository
 import com.priem.taskmanagementapp.viewmodel.TaskViewModel
 import com.priem.taskmanagementapp.viewmodel.TaskViewModelFactory
 import com.priem.taskmanagementapp.data.database.TaskDatabase
-import com.priem.taskmanagementapp.data.entity.Label
+import com.priem.taskmanagementapp.data.entity.Message
+import com.priem.taskmanagementapp.data.entity.User
+import com.priem.taskmanagementapp.data.model.Attachment
 import com.priem.taskmanagementapp.ui.adapter.TaskEditorAdapter
 import kotlinx.coroutines.launch
 
@@ -23,6 +25,7 @@ class TaskEditorActivity : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     lateinit var taskViewModel: TaskViewModel
+    private var attachedMessageId: Long? = null
 
     private val tabTitles = listOf(
         "Details", "Labels", "Calendar", "Time", "Followers", "Priority", "Attachments"
@@ -31,6 +34,8 @@ class TaskEditorActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task_editor)
+
+        attachedMessageId = intent.getLongExtra("attachedMessageId", -1).takeIf { it != -1L }
 
         val buttonSave: Button = findViewById(R.id.buttonSave)
         buttonSave.setOnClickListener {
@@ -56,7 +61,7 @@ class TaskEditorActivity : AppCompatActivity() {
 
         if (dateMillis != null) {
             if (timeText != null) {
-                // 🧠 Both Date and Time selected
+                // Both Date and Time selected
                 val calendar = java.util.Calendar.getInstance()
                 calendar.timeInMillis = dateMillis // Set date
 
@@ -92,6 +97,7 @@ class TaskEditorActivity : AppCompatActivity() {
 
             val taskId = taskViewModel.insertAndReturnTask(task)
 
+            // label
             selectedLabels.forEach { labelName ->
                 val existingLabelId = taskViewModel.getLabelIdByName(labelName)
 
@@ -105,15 +111,107 @@ class TaskEditorActivity : AppCompatActivity() {
             }
 
 
+            // followers
             val selectedFollowers = taskViewModel.taskFollowers.value.orEmpty()
             selectedFollowers.forEach { userId ->
                 taskViewModel.insertTaskFollowerCrossRef(taskId, userId)
             }
 
+            val followersList = selectedFollowers.mapNotNull { userId ->
+                taskViewModel.getUserById(userId)
+            }
+
+
+            // attachments
+            val attachments = taskViewModel.taskAttachments.value.orEmpty()
+            attachments.forEach { attachment ->
+                val taskAttachedFile = com.priem.taskmanagementapp.data.entity.TaskAttachedFile(
+                    taskId = taskId,
+                    fileName = attachment.fileName,
+                    filePath = attachment.filePath,
+                    fileSize = attachment.fileSize,
+                    fileType = attachment.fileType
+                )
+                taskViewModel.insertTaskAttachedFile(taskAttachedFile)
+            }
+            
+            saveTaskAsMessage(taskId,title,description,taskPriority,finalDueTimestamp, selectedLabels,followersList,attachments)
+
             Toast.makeText(this@TaskEditorActivity, "Task Saved!", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
+
+    private suspend fun saveTaskAsMessage(
+        taskId: Long,
+        title: String,
+        description: String,
+        taskPriority: String,
+        finalDueTimestamp: Long?,
+        selectedLabels: List<String>,
+        selectedFollowers: List<User>,
+        attachments: List<Attachment>
+    ) {
+        val finalTaskJson = buildTaskJson(
+            taskId = taskId,
+            title = title,
+            description = description,
+            priority = taskPriority,
+            dueTimestamp = finalDueTimestamp,
+            labels = selectedLabels,
+            followers = selectedFollowers,
+            attachedMessages = buildList {
+                attachedMessageId?.let { add(it) }
+                //addAll(selectedAttachedMessageIds) // if you pick more later
+            },
+            attachedFiles = attachments // empty for now or later real files
+        )
+
+        val newTaskMessage = Message(
+            content = "TASK: $title",
+            timestamp = System.currentTimeMillis(),
+            chatId = 1,
+            senderId = 1,
+            contentType = "TASK",
+            contentJson = finalTaskJson
+        )
+        taskViewModel.insertMessage(newTaskMessage)
+    }
+
+    private fun buildTaskJson(
+        taskId: Long,
+        title: String,
+        description: String,
+        priority: String,
+        dueTimestamp: Long?,
+        labels: List<String>,
+        followers: List<User>,
+        attachedMessages: List<Long>,
+        attachedFiles: List<com.priem.taskmanagementapp.data.model.Attachment>?
+    ): String {
+        val taskData = com.priem.taskmanagementapp.data.model.TaskData(
+            taskId = taskId,
+            title = title,
+            description = description,
+            priority = priority,
+            dueTimestamp = dueTimestamp,
+            labels = labels,
+            followers = followers.map { com.priem.taskmanagementapp.data.model.FollowerData(it.userId, it.name) },
+            attachedMessages = attachedMessages,
+            attachedFiles = attachedFiles?.mapIndexed { index, file ->
+                com.priem.taskmanagementapp.data.model.FileData(
+                    fileId = index.toLong(), // Dummy ID for now
+                    fileName = file.fileName,
+                    fileUrl = file.filePath,
+                    fileSize = file.fileSize,
+                    fileType = file.fileType
+                )
+            }
+        )
+
+        return com.google.gson.Gson().toJson(taskData)
+    }
+
 
     private fun setupViewModel() {
         val dao = TaskDatabase.getDatabase(this).taskDao()

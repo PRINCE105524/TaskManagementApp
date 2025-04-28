@@ -5,6 +5,7 @@ import androidx.room.*
 import com.priem.taskmanagementapp.data.entity.Label
 import com.priem.taskmanagementapp.data.entity.Message
 import com.priem.taskmanagementapp.data.entity.Task
+import com.priem.taskmanagementapp.data.entity.TaskAttachedFile
 import com.priem.taskmanagementapp.data.entity.TaskFollowerCrossRef
 import com.priem.taskmanagementapp.data.entity.TaskLabelCrossRef
 import com.priem.taskmanagementapp.data.entity.User
@@ -53,6 +54,12 @@ interface TaskDao {
     @Query("SELECT * FROM users ORDER BY name ASC")
     fun getAllUsers(): LiveData<List<User>>
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUser(user: User)
+
+    @Query("SELECT * FROM users WHERE userId = :id")
+    suspend fun getUserById(id: Long): User?
+
 
     // TaskFollowerCrossRef related query
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -65,6 +72,14 @@ interface TaskDao {
 
     @Query("SELECT * FROM messages ORDER BY timestamp DESC")
     fun getAllMessages(): LiveData<List<Message>>
+
+
+    // File related query
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTaskAttachedFile(file: TaskAttachedFile)
+
+    @Query("SELECT * FROM messages WHERE messageId IN (:ids)")
+    suspend fun getMessagesByIds(ids: List<Long>): List<Message>
 
 
 

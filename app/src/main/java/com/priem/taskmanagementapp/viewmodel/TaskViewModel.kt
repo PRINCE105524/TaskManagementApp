@@ -2,8 +2,12 @@ package com.priem.taskmanagementapp.viewmodel
 
 import androidx.lifecycle.*
 import com.priem.taskmanagementapp.data.entity.Label
+import com.priem.taskmanagementapp.data.entity.Message
 import com.priem.taskmanagementapp.data.entity.Task
+import com.priem.taskmanagementapp.data.entity.TaskAttachedFile
 import com.priem.taskmanagementapp.data.entity.TaskLabelCrossRef
+import com.priem.taskmanagementapp.data.entity.User
+import com.priem.taskmanagementapp.data.model.Attachment
 import com.priem.taskmanagementapp.data.relation.TaskWithLabels
 import com.priem.taskmanagementapp.repository.TaskRepository
 import kotlinx.coroutines.launch
@@ -62,6 +66,9 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
         repository.insertTaskFollowerCrossRef(taskId, userId)
     }
 
+    suspend fun getUserById(id: Long): User? {
+        return repository.getUserById(id)
+    }
 
     // Priority Fragment
     private val _taskPriority = androidx.lifecycle.MutableLiveData<String>("LOW")
@@ -69,6 +76,19 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
 
     fun setTaskPriority(priority: String) {
         _taskPriority.value = priority
+    }
+
+
+    // Attachments Fragment
+    private val _taskAttachments = androidx.lifecycle.MutableLiveData<List<Attachment>>()
+    val taskAttachments: androidx.lifecycle.LiveData<List<Attachment>> = _taskAttachments
+
+    fun setAttachments(attachmentList: List<Attachment>) {
+        _taskAttachments.value = attachmentList
+    }
+
+    suspend fun insertTaskAttachedFile(file: TaskAttachedFile) {
+        repository.insertTaskAttachedFile(file)
     }
 
 
@@ -105,6 +125,9 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
         repository.insertTaskLabelCrossRef(TaskLabelCrossRef(taskId, labelId))
     }
 
-
+    // insert task message
+    suspend fun insertMessage(message: Message) {
+        repository.insertMessage(message)
+    }
 
 }

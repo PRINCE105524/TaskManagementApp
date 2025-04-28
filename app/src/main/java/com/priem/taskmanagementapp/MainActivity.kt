@@ -1,67 +1,103 @@
 package com.priem.taskmanagementapp
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.priem.taskmanagementapp.ui.theme.TaskManagementAppTheme
 import android.content.Intent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
+import android.os.Bundle
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.gson.Gson
 import com.priem.taskmanagementapp.data.database.TaskDatabase
+import com.priem.taskmanagementapp.data.entity.Message
 import com.priem.taskmanagementapp.repository.TaskRepository
+import com.priem.taskmanagementapp.ui.TaskDetailsActivity
 import com.priem.taskmanagementapp.ui.TaskEditorActivity
+import com.priem.taskmanagementapp.ui.adapter.MessageAdapter
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var fabAddMessage: FloatingActionButton
+    private lateinit var adapter: MessageAdapter
+    private lateinit var repository: TaskRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            TaskManagementAppTheme {
-                MainScreen()
-            }
+        setContentView(R.layout.activity_main)
+
+        val dao = TaskDatabase.getDatabase(this).taskDao()
+        repository = TaskRepository(dao)
+
+        recyclerView = findViewById(R.id.recyclerViewMessages)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        fabAddMessage = findViewById(R.id.fabAddMessage)
+
+        fabAddMessage.setOnClickListener {
+            showAddMessageDialog()
         }
+
+        loadMessages()
+    }
+
+    private fun loadMessages() {
         lifecycleScope.launch {
-            val dao = TaskDatabase.getDatabase(this@MainActivity).taskDao()
-            val repository = TaskRepository(dao)
-            if (!repository.getAllUsers().value.isNullOrEmpty() && !repository.getAllMessages().value.isNullOrEmpty()){
-                repository.insertDummyUsers()
-                repository.insertDummyMessages()
+            repository.getAllMessages().observe(this@MainActivity) { messages ->
+
+                adapter = MessageAdapter(
+                    messages,
+                    onTaskClicked = { taskData ->
+                        val intent = Intent(this@MainActivity, TaskDetailsActivity::class.java)
+                        intent.putExtra("taskDataJson", Gson().toJson(taskData))
+                        startActivity(intent)
+                    },
+                    onMessageClicked = { message ->
+                        val intent = Intent(this@MainActivity, TaskEditorActivity::class.java)
+                        intent.putExtra("attachedMessageId", message.messageId)
+                        startActivity(intent)
+                    }
+                )
+
+                recyclerView.adapter = adapter
             }
         }
     }
 
-    @Composable
-    fun MainScreen() {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Welcome to Task Manager!",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = {
-                    val intent = Intent(this@MainActivity, TaskEditorActivity::class.java)
-                    startActivity(intent)
-                }
-            ) {
-                Text(text = "Create New Task")
-            }
+    private fun showAddMessageDialog() {
+        val input = EditText(this)
+        input.hint = "Enter your single line note. Later you can convert this to Task!"
 
+        AlertDialog.Builder(this)
+            .setTitle("New Note")
+            .setView(input)
+            .setPositiveButton("Send") { dialog, _ ->
+                val messageText = input.text.toString().trim()
+                if (messageText.isNotEmpty()) {
+                    insertNewMessage(messageText)
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun insertNewMessage(content: String) {
+        lifecycleScope.launch {
+            val message = Message(
+                content = content,
+                timestamp = System.currentTimeMillis(),
+                chatId = 1,
+                senderId = 1,
+                contentType = "TEXT",
+                contentJson = null
+            )
+            repository.insertMessage(message)
         }
     }
 }
