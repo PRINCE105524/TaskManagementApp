@@ -12,7 +12,9 @@ import com.google.android.material.chip.ChipGroup
 import com.google.gson.Gson
 import com.priem.taskmanagementapp.R
 import com.priem.taskmanagementapp.data.database.TaskDatabase
+import com.priem.taskmanagementapp.data.model.FileData
 import com.priem.taskmanagementapp.data.model.TaskData
+import com.priem.taskmanagementapp.ui.adapter.AttachedFilesAdapter
 import com.priem.taskmanagementapp.ui.adapter.AttachmentsAdapter
 import com.priem.taskmanagementapp.ui.adapter.FollowersAdapter
 import kotlinx.coroutines.launch
@@ -95,9 +97,15 @@ class TaskDetailsActivity : AppCompatActivity() {
         recyclerViewFollowers.adapter = followersAdapter
 
         // Attachments (messages)
-        if (taskData.attachedMessages!!.isNotEmpty()) {
+        if (!taskData.attachedMessages.isNullOrEmpty()) {
             loadAttachedMessages(taskData.attachedMessages!!)
         }
+
+        // Attachments (files)
+        if (!taskData.attachedFiles.isNullOrEmpty()) {
+            loadAttachedFiles(taskData.attachedFiles!!)
+        }
+
     }
 
     private fun loadAttachedMessages(messageIds: List<Long>) {
@@ -108,6 +116,12 @@ class TaskDetailsActivity : AppCompatActivity() {
             recyclerViewAttachments.adapter = attachmentsAdapter
         }
     }
+
+    private fun loadAttachedFiles(fileDataList: List<FileData>) {
+        val attachedFilesAdapter = AttachedFilesAdapter(fileDataList)
+        findViewById<RecyclerView>(R.id.recyclerViewAttachedFiles).adapter = attachedFilesAdapter
+    }
+
 }
 
 

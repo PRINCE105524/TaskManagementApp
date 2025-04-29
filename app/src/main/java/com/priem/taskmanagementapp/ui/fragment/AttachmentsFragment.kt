@@ -1,7 +1,5 @@
 package com.priem.taskmanagementapp.ui.fragment
 
-import android.app.Activity
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -19,6 +17,7 @@ import com.priem.taskmanagementapp.data.model.Attachment
 import com.priem.taskmanagementapp.ui.adapter.AttachmentAdapter
 import com.priem.taskmanagementapp.viewmodel.TaskViewModel
 import java.io.File
+import java.io.FileOutputStream
 
 class AttachmentsFragment : Fragment() {
 
@@ -29,10 +28,13 @@ class AttachmentsFragment : Fragment() {
 
     private val attachments = mutableListOf<Attachment>()
 
-    private val filePickerLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { addAttachment(it) }
+    private val multipleFilePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris: List<Uri>? ->
+        uris?.forEach { uri ->
+            copyFileToInternalStorage(uri)
+        }
+        adapter.notifyDataSetChanged()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,28 +64,42 @@ class AttachmentsFragment : Fragment() {
     }
 
     private fun pickFile() {
-        filePickerLauncher.launch("*/*") // Pick any file
+        multipleFilePickerLauncher.launch(arrayOf("*/*"))
     }
 
-    private fun addAttachment(uri: Uri) {
-        val fileName = File(uri.path ?: "").name
-        val fileType = MimeTypeMap.getSingleton()
-            .getExtensionFromMimeType(requireContext().contentResolver.getType(uri)) ?: "unknown"
-        val fileSize = uri.let {
-            requireContext().contentResolver.openInputStream(it)?.available()?.toLong() ?: 0L
+    private fun copyFileToInternalStorage(uri: Uri) {
+        try {
+            val contentResolver = requireContext().contentResolver
+            val inputStream = contentResolver.openInputStream(uri)
+            val fileExtension = MimeTypeMap.getSingleton()
+                .getExtensionFromMimeType(contentResolver.getType(uri)) ?: "file"
+
+            val fileName = "attachment_${System.currentTimeMillis()}.$fileExtension"
+            val file = File(requireContext().filesDir, fileName)
+            val outputStream = FileOutputStream(file)
+
+            inputStream?.copyTo(outputStream)
+
+            inputStream?.close()
+            outputStream.close()
+
+            val fileSize = file.length()
+
+            val attachment = Attachment(
+                fileName = file.name,
+                filePath = file.absolutePath,
+                fileSize = fileSize,
+                fileType = contentResolver.getType(uri) ?: "unknown"
+            )
+
+            attachments.add(attachment)
+            adapter.notifyItemInserted(attachments.size - 1)
+
+            taskViewModel.setAttachments(attachments)
+
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-
-        val attachment = Attachment(
-            fileName = fileName,
-            filePath = uri.toString(),
-            fileSize = fileSize,
-            fileType = fileType
-        )
-
-        attachments.add(attachment)
-        adapter.notifyItemInserted(attachments.size - 1)
-
-        taskViewModel.setAttachments(attachments)
     }
 }
 
