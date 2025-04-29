@@ -1,6 +1,7 @@
 package com.priem.taskmanagementapp.ui
 
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +19,7 @@ import com.priem.taskmanagementapp.data.entity.Message
 import com.priem.taskmanagementapp.data.entity.User
 import com.priem.taskmanagementapp.data.model.Attachment
 import com.priem.taskmanagementapp.ui.adapter.TaskEditorAdapter
+import com.priem.taskmanagementapp.utility.InsetsHelper
 import kotlinx.coroutines.launch
 
 class TaskEditorActivity : AppCompatActivity() {
@@ -34,6 +36,10 @@ class TaskEditorActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task_editor)
+
+        val rootView = findViewById<View>(R.id.editorConstraintLayout)
+        InsetsHelper.setupWindowInsets(window, rootView, useEdgeToEdge = true)
+
 
         attachedMessageId = intent.getLongExtra("attachedMessageId", -1).takeIf { it != -1L }
 

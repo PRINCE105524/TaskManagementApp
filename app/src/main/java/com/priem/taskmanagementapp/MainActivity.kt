@@ -2,6 +2,7 @@ package com.priem.taskmanagementapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +17,7 @@ import com.priem.taskmanagementapp.repository.TaskRepository
 import com.priem.taskmanagementapp.ui.TaskDetailsActivity
 import com.priem.taskmanagementapp.ui.TaskEditorActivity
 import com.priem.taskmanagementapp.ui.adapter.MessageAdapter
+import com.priem.taskmanagementapp.utility.InsetsHelper
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -28,6 +30,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val rootView = findViewById<View>(R.id.rootLayout)
+
+        // true if you want immersive experience, false if you want normal behavior
+        InsetsHelper.setupWindowInsets(window, rootView, useEdgeToEdge = true)
 
         val dao = TaskDatabase.getDatabase(this).taskDao()
         repository = TaskRepository(dao)

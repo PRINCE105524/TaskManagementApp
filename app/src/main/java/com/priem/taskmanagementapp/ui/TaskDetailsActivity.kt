@@ -1,6 +1,7 @@
 package com.priem.taskmanagementapp.ui
 
 import android.os.Bundle
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -17,6 +18,7 @@ import com.priem.taskmanagementapp.data.model.TaskData
 import com.priem.taskmanagementapp.ui.adapter.AttachedFilesAdapter
 import com.priem.taskmanagementapp.ui.adapter.AttachmentsAdapter
 import com.priem.taskmanagementapp.ui.adapter.FollowersAdapter
+import com.priem.taskmanagementapp.utility.InsetsHelper
 import kotlinx.coroutines.launch
 
 class TaskDetailsActivity : AppCompatActivity() {
@@ -37,6 +39,9 @@ class TaskDetailsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task_details)
+
+        val rootView = findViewById<View>(R.id.nestedScrollView)
+        InsetsHelper.setupWindowInsets(window, rootView, useEdgeToEdge = true)
 
         initViews()
         loadTaskData()
