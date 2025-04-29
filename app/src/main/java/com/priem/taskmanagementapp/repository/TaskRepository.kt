@@ -41,6 +41,15 @@ class TaskRepository(private val taskDao: TaskDao) {
         taskDao.insertTaskLabelCrossRef(crossRef)
     }
 
+     fun getAllLabels(): LiveData<List<Label>> {
+        return taskDao.getAllLabels()
+    }
+
+     suspend fun insertLabel(label: Label) {
+        taskDao.insertLabel(label)
+    }
+
+
     // User related methods
     suspend fun insertDummyUsers() {
         val dummyUsers = listOf(

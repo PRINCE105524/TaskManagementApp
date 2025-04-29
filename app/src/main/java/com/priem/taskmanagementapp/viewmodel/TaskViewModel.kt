@@ -38,6 +38,26 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
         _taskLabels.value = labels
     }
 
+
+    // Labels LiveData
+    private val _availableLabels = MutableLiveData<List<Label>>(emptyList())
+    val availableLabels: LiveData<List<Label>> get() = _availableLabels
+
+    // Load labels from DB
+    fun loadLabels() {
+        viewModelScope.launch {
+            repository.getAllLabels().observeForever { labels ->
+                _availableLabels.value = labels
+            }
+        }
+    }
+
+    // Insert a new label
+    suspend fun insertLabel(name: String) {
+            repository.insertLabel(Label(name = name))
+    }
+
+
     // Calendar Fragment
     private val _taskDueTimestamp = androidx.lifecycle.MutableLiveData<Long?>()
     val taskDueTimestamp: androidx.lifecycle.LiveData<Long?> = _taskDueTimestamp

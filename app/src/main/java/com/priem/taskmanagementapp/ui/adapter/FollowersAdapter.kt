@@ -1,5 +1,6 @@
 package com.priem.taskmanagementapp.ui.adapter
 
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -31,8 +32,13 @@ class FollowersAdapter(private val followers: List<FollowerData>) :
 
         fun bind(follower: FollowerData) {
             textName.text = follower.name
-            // Dummy avatar, you can load real image if available later
-            imageAvatar.setImageResource(R.drawable.ic_avatar_placeholder)
+
+            if (!follower.avatarUrl.isNullOrEmpty()) {
+                imageAvatar.setImageBitmap(BitmapFactory.decodeFile(follower.avatarUrl))
+            } else {
+                imageAvatar.setImageResource(R.drawable.ic_avatar_placeholder)
+            }
         }
+
     }
 }

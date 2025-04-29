@@ -31,6 +31,10 @@ interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertLabel(label: Label): Long
 
+
+    @Query("SELECT * FROM labels")
+    fun getAllLabels(): LiveData<List<Label>>
+
     @Transaction
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTaskLabelCrossRef(crossRef: TaskLabelCrossRef)
@@ -44,6 +48,7 @@ interface TaskDao {
 
     @Query("SELECT labelId FROM labels WHERE name = :name LIMIT 1")
     suspend fun getLabelIdByName(name: String): Long?
+
 
 
     // User related query

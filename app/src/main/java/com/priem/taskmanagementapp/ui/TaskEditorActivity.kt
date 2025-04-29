@@ -196,7 +196,7 @@ class TaskEditorActivity : AppCompatActivity() {
             priority = priority,
             dueTimestamp = dueTimestamp,
             labels = labels,
-            followers = followers.map { com.priem.taskmanagementapp.data.model.FollowerData(it.userId, it.name) },
+            followers = followers.map { com.priem.taskmanagementapp.data.model.FollowerData(it.userId, it.name, it.avatarUrl) },
             attachedMessages = attachedMessages,
             attachedFiles = attachedFiles?.mapIndexed { index, file ->
                 com.priem.taskmanagementapp.data.model.FileData(

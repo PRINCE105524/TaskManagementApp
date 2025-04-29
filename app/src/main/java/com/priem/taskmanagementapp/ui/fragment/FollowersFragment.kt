@@ -2,6 +2,7 @@ package com.priem.taskmanagementapp.ui.fragment
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -22,6 +23,8 @@ import com.priem.taskmanagementapp.repository.TaskRepository
 import com.priem.taskmanagementapp.ui.adapter.FollowerAdapter
 import com.priem.taskmanagementapp.viewmodel.TaskViewModel
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
 class FollowersFragment : Fragment() {
 
@@ -125,7 +128,6 @@ class FollowersFragment : Fragment() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
         startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
-
         imagePickCallback = onImagePicked
     }
 
@@ -137,8 +139,29 @@ class FollowersFragment : Fragment() {
         if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == AppCompatActivity.RESULT_OK) {
             val uri = data?.data
             uri?.let {
-                imagePickCallback?.invoke(it.toString())
+                val localPath = copyImageToInternalStorage(it)
+                if (localPath != null) {
+                    imagePickCallback?.invoke(localPath)
+                }
             }
+        }
+    }
+
+    private fun copyImageToInternalStorage(uri: Uri): String? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val fileName = "avatar_${System.currentTimeMillis()}.jpg"
+            val file = File(requireContext().filesDir, fileName)
+            val outputStream = FileOutputStream(file)
+
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 

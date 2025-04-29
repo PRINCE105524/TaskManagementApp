@@ -14,8 +14,10 @@ data class TaskData(
 
 data class FollowerData(
     val userId: Long,
-    val name: String
+    val name: String,
+    val avatarUrl: String? = null
 )
+
 
 data class FileData(
     val fileId: Long,
