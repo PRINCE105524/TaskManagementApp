@@ -55,18 +55,22 @@ class LabelsFragment : Fragment() {
     private fun setupChips(labelNames: List<String>) {
         chipGroupLabels.removeAllViews()
 
+        // 🧠 Get preselected labels from ViewModel
+        val selectedLabels = taskViewModel.taskLabels.value.orEmpty()
+
         for (label in labelNames) {
-            val chip = Chip(requireContext())
-            chip.text = label
-            chip.isCheckable = true
-
-            chip.setOnCheckedChangeListener { _, _ ->
-                saveSelectedLabels()
+            val chip = Chip(requireContext()).apply {
+                text = label
+                isCheckable = true
+                isChecked = selectedLabels.contains(label) // ✅ Pre-select if matched
+                setOnCheckedChangeListener { _, _ ->
+                    saveSelectedLabels()
+                }
             }
-
             chipGroupLabels.addView(chip)
         }
     }
+
 
     private fun saveSelectedLabels() {
         val selectedLabels = chipGroupLabels.children

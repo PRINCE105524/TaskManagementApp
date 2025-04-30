@@ -34,7 +34,6 @@ class AttachmentsFragment : Fragment() {
         uris?.forEach { uri ->
             copyFileToInternalStorage(uri)
         }
-        adapter.notifyDataSetChanged()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,19 +44,30 @@ class AttachmentsFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val view = inflater.inflate(R.layout.fragment_attachments, container, false)
 
         buttonPickFile = view.findViewById(R.id.buttonPickFile)
         recyclerView = view.findViewById(R.id.recyclerViewAttachments)
-
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        adapter = AttachmentAdapter(attachments)
+        adapter = AttachmentAdapter(attachments) { attachment ->
+            attachments.remove(attachment)
+            adapter.notifyDataSetChanged()
+            taskViewModel.setAttachments(attachments)
+        }
+
         recyclerView.adapter = adapter
 
         buttonPickFile.setOnClickListener {
             pickFile()
+        }
+
+        // 🧠 Pre-fill in edit mode if available
+        taskViewModel.taskAttachments.value?.let {
+            attachments.clear()
+            attachments.addAll(it)
+            adapter.notifyDataSetChanged()
         }
 
         return view
@@ -79,12 +89,10 @@ class AttachmentsFragment : Fragment() {
             val outputStream = FileOutputStream(file)
 
             inputStream?.copyTo(outputStream)
-
             inputStream?.close()
             outputStream.close()
 
             val fileSize = file.length()
-
             val attachment = Attachment(
                 fileName = file.name,
                 filePath = file.absolutePath,
@@ -94,12 +102,13 @@ class AttachmentsFragment : Fragment() {
 
             attachments.add(attachment)
             adapter.notifyItemInserted(attachments.size - 1)
-
             taskViewModel.setAttachments(attachments)
 
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
+
 }
+
 

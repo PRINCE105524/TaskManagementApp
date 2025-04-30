@@ -1,7 +1,9 @@
 package com.priem.taskmanagementapp.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -44,8 +46,21 @@ class TaskDetailsActivity : AppCompatActivity() {
         InsetsHelper.setupWindowInsets(window, rootView, useEdgeToEdge = true)
 
         initViews()
+
+        findViewById<Button>(R.id.buttonEditTask).setOnClickListener {
+            openEditorForEditing()
+        }
+
         loadTaskData()
     }
+
+    private fun openEditorForEditing() {
+        val intent = Intent(this, TaskEditorActivity::class.java)
+        intent.putExtra("taskDataJson", Gson().toJson(taskData)) // pass full task data
+        intent.putExtra("isEditing", true) // tell editor it's edit mode
+        startActivity(intent)
+    }
+
 
     private fun initViews() {
         textTaskTitle = findViewById(R.id.textTaskTitle)

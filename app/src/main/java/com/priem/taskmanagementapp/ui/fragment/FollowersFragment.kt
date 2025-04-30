@@ -71,13 +71,19 @@ class FollowersFragment : Fragment() {
     private fun loadUsers() {
         lifecycleScope.launch {
             repository.getAllUsers().observe(viewLifecycleOwner) { users ->
+                val currentSelectedIds = taskViewModel.taskFollowers.value.orEmpty().toMutableSet()
+                selectedUserIds.clear()
+                selectedUserIds.addAll(currentSelectedIds)
+
                 adapter = FollowerAdapter(users, selectedUserIds) { updatedSelectedIds ->
                     taskViewModel.setFollowers(updatedSelectedIds.toList())
                 }
+
                 recyclerView.adapter = adapter
             }
         }
     }
+
 
     private fun showAddUserDialog() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_user, null)
@@ -164,8 +170,5 @@ class FollowersFragment : Fragment() {
             null
         }
     }
-
-
-
 
 }

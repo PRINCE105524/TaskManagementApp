@@ -13,15 +13,30 @@ import com.google.android.material.timepicker.TimeFormat
 import com.priem.taskmanagementapp.R
 import com.priem.taskmanagementapp.viewmodel.TaskViewModel
 
+
 class TimeFragment : Fragment() {
 
     private lateinit var buttonPickTime: Button
     private lateinit var textSelectedTime: TextView
     private lateinit var taskViewModel: TaskViewModel
 
+    private var prefillHour = 12
+    private var prefillMinute = 0
+    private var prefillIsPm = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         taskViewModel = ViewModelProvider(requireActivity())[TaskViewModel::class.java]
+
+        // Extract hour and minute if already selected
+        taskViewModel.taskDueTime.value?.let { timeText ->
+            val parts = timeText.split(" ", ":")
+            if (parts.size == 3) {
+                prefillHour = parts[0].toIntOrNull() ?: 12
+                prefillMinute = parts[1].toIntOrNull() ?: 0
+                prefillIsPm = parts[2].equals("PM", ignoreCase = true)
+            }
+        }
     }
 
     override fun onCreateView(
@@ -37,7 +52,7 @@ class TimeFragment : Fragment() {
             openTimePicker()
         }
 
-        // Pre-fill if time already selected
+        // Pre-fill text view
         taskViewModel.taskDueTime.value?.let { timeText ->
             textSelectedTime.text = "Selected: $timeText"
         }
@@ -46,22 +61,36 @@ class TimeFragment : Fragment() {
     }
 
     private fun openTimePicker() {
+        // Convert to 24-hour format for MaterialTimePicker
+        val pickerHour = if (prefillIsPm && prefillHour < 12) prefillHour + 12 else if (!prefillIsPm && prefillHour == 12) 0 else prefillHour
+
         val picker = MaterialTimePicker.Builder()
-            .setTimeFormat(TimeFormat.CLOCK_12H) // or CLOCK_24H
-            .setHour(12)
-            .setMinute(0)
+            .setTimeFormat(TimeFormat.CLOCK_12H)
+            .setHour(pickerHour)
+            .setMinute(prefillMinute)
             .setTitleText("Select Time")
             .build()
 
         picker.show(parentFragmentManager, "timePicker")
 
         picker.addOnPositiveButtonClickListener {
-            val hour = picker.hour
+            val hour24 = picker.hour
             val minute = picker.minute
 
-            val formattedTime = String.format("%02d:%02d", hour, minute)
+            // Convert to 12-hour format with AM/PM
+            val isPm = hour24 >= 12
+            val hour12 = when {
+                hour24 == 0 -> 12
+                hour24 > 12 -> hour24 - 12
+                else -> hour24
+            }
 
-            taskViewModel.setDueTime(formattedTime)
+            val amPm = if (isPm) "PM" else "AM"
+            val formattedTime = String.format("%02d:%02d %s", hour12, minute, amPm)
+            val formattedTimeExcludeAM_PM = String.format("%02d:%02d", hour12, minute)
+
+
+            taskViewModel.setDueTime(formattedTimeExcludeAM_PM)
             textSelectedTime.text = "Selected: $formattedTime"
         }
     }

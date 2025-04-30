@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.google.gson.Gson
 import com.priem.taskmanagementapp.R
 import com.priem.taskmanagementapp.repository.TaskRepository
 import com.priem.taskmanagementapp.viewmodel.TaskViewModel
@@ -18,6 +19,7 @@ import com.priem.taskmanagementapp.data.database.TaskDatabase
 import com.priem.taskmanagementapp.data.entity.Message
 import com.priem.taskmanagementapp.data.entity.User
 import com.priem.taskmanagementapp.data.model.Attachment
+import com.priem.taskmanagementapp.data.model.TaskData
 import com.priem.taskmanagementapp.ui.adapter.TaskEditorAdapter
 import com.priem.taskmanagementapp.utility.InsetsHelper
 import kotlinx.coroutines.launch
@@ -28,6 +30,7 @@ class TaskEditorActivity : AppCompatActivity() {
     private lateinit var tabLayout: TabLayout
     lateinit var taskViewModel: TaskViewModel
     private var attachedMessageId: Long? = null
+    private var editingTaskData: TaskData? = null
 
     private val tabTitles = listOf(
         "Details", "Labels", "Calendar", "Time", "Followers", "Priority", "Attachments"
@@ -40,19 +43,24 @@ class TaskEditorActivity : AppCompatActivity() {
         val rootView = findViewById<View>(R.id.editorConstraintLayout)
         InsetsHelper.setupWindowInsets(window, rootView, useEdgeToEdge = true)
 
-
+        // ✅ Step 1 — Move this BEFORE setupViewModel()
         attachedMessageId = intent.getLongExtra("attachedMessageId", -1).takeIf { it != -1L }
+
+        intent.getStringExtra("taskDataJson")?.let { json ->
+            editingTaskData = Gson().fromJson(json, TaskData::class.java)
+        }
+
+        // ✅ Now taskViewModel will pick up editingTaskData
+        setupViewModel()
+        setupViewPager()
+        setupTabLayout()
 
         val buttonSave: Button = findViewById(R.id.buttonSave)
         buttonSave.setOnClickListener {
             saveTask()
         }
-
-
-        setupViewModel()
-        setupViewPager()
-        setupTabLayout()
     }
+
 
     private fun saveTask() {
         val title = taskViewModel.taskTitle.value.orEmpty().trim()
@@ -224,6 +232,34 @@ class TaskEditorActivity : AppCompatActivity() {
         val repository = TaskRepository(dao)
         val factory = TaskViewModelFactory(repository)
         taskViewModel = ViewModelProvider(this, factory)[TaskViewModel::class.java]
+
+        editingTaskData?.let { task ->
+            taskViewModel.setTitle(task.title)
+            taskViewModel.setDescription(task.description)
+            taskViewModel.setLabels(task.labels ?: emptyList())
+            task.dueTimestamp?.let { timestamp ->
+                taskViewModel.setDueTimestamp(timestamp)
+                // 🧠 Extract time from timestamp and set as HH:mm
+                val calendar = java.util.Calendar.getInstance().apply {
+                    timeInMillis = timestamp
+                }
+                val hour = calendar.get(java.util.Calendar.HOUR).let { if (it == 0) 12 else it } // 12-hour clock
+                val minute = calendar.get(java.util.Calendar.MINUTE)
+                val amPm = if (calendar.get(java.util.Calendar.AM_PM) == java.util.Calendar.AM) "AM" else "PM"
+                val formattedTime = String.format("%02d:%02d %s", hour, minute, amPm)
+                taskViewModel.setDueTime(formattedTime)
+            }
+            taskViewModel.setTaskPriority(task.priority)
+            taskViewModel.setFollowers(task.followers?.map { it.userId } ?: emptyList())
+            taskViewModel.setAttachments(task.attachedFiles?.map {
+                Attachment(
+                    fileName = it.fileName,
+                    filePath = it.fileUrl ?: "",
+                    fileSize = it.fileSize ?: 0L,
+                    fileType = it.fileType ?: "application/octet-stream"
+                )
+            } ?: emptyList())
+        }
     }
 
     private fun setupViewPager() {

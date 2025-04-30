@@ -27,28 +27,36 @@ class DetailsFragment : Fragment() {
         editTextTaskTitle = view.findViewById(R.id.editTextTaskTitle)
         editTextTaskDescription = view.findViewById(R.id.editTextTaskDescription)
 
+        // 🧠 Prefill values if available
+        editTextTaskTitle.setText(taskViewModel.taskTitle.value.orEmpty())
+        editTextTaskDescription.setText(taskViewModel.taskDescription.value.orEmpty())
+
         setupTextWatchers()
 
         return view
     }
 
+
     private fun setupTextWatchers() {
         editTextTaskTitle.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                taskViewModel.setTitle(s.toString())
+                if (editTextTaskTitle.hasFocus()) {
+                    taskViewModel.setTitle(s.toString())
+                }
             }
-
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         editTextTaskDescription.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                taskViewModel.setDescription(s.toString())
+                if (editTextTaskDescription.hasFocus()) {
+                    taskViewModel.setDescription(s.toString())
+                }
             }
-
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
     }
+
 }

@@ -36,13 +36,16 @@ class CalendarFragment : Fragment() {
             openDatePicker()
         }
 
-        // 🧠 Pre-fill if already selected
-        taskViewModel.taskDueTimestamp.value?.let { timestamp ->
-            updateSelectedDate(timestamp)
+        // ✅ Observe for changes (pre-fill or later update)
+        taskViewModel.taskDueTimestamp.observe(viewLifecycleOwner) { timestamp ->
+            if (timestamp != null) {
+                updateSelectedDate(timestamp)
+            }
         }
 
         return view
     }
+
 
     private fun openDatePicker() {
         val datePicker = MaterialDatePicker.Builder.datePicker()

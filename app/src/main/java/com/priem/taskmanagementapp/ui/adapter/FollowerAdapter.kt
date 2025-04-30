@@ -1,9 +1,11 @@
 package com.priem.taskmanagementapp.ui.adapter
 
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.priem.taskmanagementapp.R
@@ -31,6 +33,8 @@ class FollowerAdapter(
     class FollowerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val checkBoxFollower: CheckBox = itemView.findViewById(R.id.checkBoxFollower)
         private val textName: TextView = itemView.findViewById(R.id.textFollowerName)
+        private val textPhone: TextView = itemView.findViewById(R.id.textFollowerPhone)
+        private val imageAvatar: ImageView = itemView.findViewById(R.id.imageAvatar)
 
         fun bind(
             user: User,
@@ -38,7 +42,15 @@ class FollowerAdapter(
             onSelectionChanged: (Set<Long>) -> Unit
         ) {
             textName.text = user.name
+            textPhone.text = user.phoneNumber
             checkBoxFollower.isChecked = selectedUserIds.contains(user.userId)
+
+            // Load avatar
+            if (!user.avatarUrl.isNullOrEmpty()) {
+                imageAvatar.setImageBitmap(BitmapFactory.decodeFile(user.avatarUrl))
+            } else {
+                imageAvatar.setImageResource(R.drawable.ic_avatar_placeholder)
+            }
 
             itemView.setOnClickListener {
                 checkBoxFollower.isChecked = !checkBoxFollower.isChecked
