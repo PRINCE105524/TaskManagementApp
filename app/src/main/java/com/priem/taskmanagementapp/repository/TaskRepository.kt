@@ -20,6 +20,15 @@ class TaskRepository(private val taskDao: TaskDao) {
         taskDao.updateTask(task)
     }
 
+
+    suspend fun deleteAllLabelsForTask(taskId: Long) = taskDao.deleteAllLabelsForTask(taskId)
+
+    suspend fun deleteAllFollowersForTask(taskId: Long) = taskDao.deleteAllFollowersForTask(taskId)
+
+    suspend fun deleteAllFilesForTask(taskId: Long) = taskDao.deleteAllFilesForTask(taskId)
+
+
+
     suspend fun deleteTask(task: Task) {
         taskDao.deleteTask(task)
     }

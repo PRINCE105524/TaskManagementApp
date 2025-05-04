@@ -16,7 +16,10 @@ import com.priem.taskmanagementapp.repository.TaskRepository
 import com.priem.taskmanagementapp.viewmodel.TaskViewModel
 import com.priem.taskmanagementapp.viewmodel.TaskViewModelFactory
 import com.priem.taskmanagementapp.data.database.TaskDatabase
+import com.priem.taskmanagementapp.data.entity.Label
 import com.priem.taskmanagementapp.data.entity.Message
+import com.priem.taskmanagementapp.data.entity.Task
+import com.priem.taskmanagementapp.data.entity.TaskAttachedFile
 import com.priem.taskmanagementapp.data.entity.User
 import com.priem.taskmanagementapp.data.model.Attachment
 import com.priem.taskmanagementapp.data.model.TaskData
@@ -56,10 +59,12 @@ class TaskEditorActivity : AppCompatActivity() {
         setupTabLayout()
 
         val buttonSave: Button = findViewById(R.id.buttonSave)
+        buttonSave.text = if (editingTaskData == null) "SAVE TASK" else "UPDATE TASK"
         buttonSave.setOnClickListener {
             saveTask()
         }
     }
+
 
 
     private fun saveTask() {
@@ -72,28 +77,21 @@ class TaskEditorActivity : AppCompatActivity() {
         val timeText = taskViewModel.taskDueTime.value
 
         var finalDueTimestamp: Long? = null
-
         if (dateMillis != null) {
             if (timeText != null) {
-                // Both Date and Time selected
                 val calendar = java.util.Calendar.getInstance()
-                calendar.timeInMillis = dateMillis // Set date
-
+                calendar.timeInMillis = dateMillis
                 val hour = timeText.split(":")[0].toInt()
                 val minute = timeText.split(":")[1].toInt()
-
                 calendar.set(java.util.Calendar.HOUR_OF_DAY, hour)
                 calendar.set(java.util.Calendar.MINUTE, minute)
                 calendar.set(java.util.Calendar.SECOND, 0)
                 calendar.set(java.util.Calendar.MILLISECOND, 0)
-
                 finalDueTimestamp = calendar.timeInMillis
             } else {
-                // Only Date selected, Time is null
                 finalDueTimestamp = dateMillis
             }
         }
-        // If no date selected → leave finalDueTimestamp as null
 
         if (title.isEmpty() || description.isEmpty()) {
             Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show()
@@ -101,60 +99,61 @@ class TaskEditorActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
+            var taskId: Long
+            if (editingTaskData != null) {
+                taskId = editingTaskData!!.taskId
+                val updatedTask = Task(
+                    taskId = taskId.toInt(),
+                    title = title,
+                    description = description,
+                    priority = taskPriority,
+                    dueTimestamp = finalDueTimestamp
+                )
+                taskViewModel.updateTask(updatedTask)
+                taskViewModel.deleteAllLabelsForTask(taskId)
+                taskViewModel.deleteAllFollowersForTask(taskId)
+                taskViewModel.deleteAllFilesForTask(taskId)
+            } else {
+                val newTask = Task(
+                    title = title,
+                    description = description,
+                    priority = taskPriority,
+                    dueTimestamp = finalDueTimestamp
+                )
+                taskId = taskViewModel.insertAndReturnTask(newTask)
+            }
 
-            val task = com.priem.taskmanagementapp.data.entity.Task(
-                title = title,
-                description = description,
-                priority = taskPriority,
-                dueTimestamp = finalDueTimestamp
-            )
-
-            val taskId = taskViewModel.insertAndReturnTask(task)
-
-            // label
             selectedLabels.forEach { labelName ->
-                val existingLabelId = taskViewModel.getLabelIdByName(labelName)
-
-                val labelId = if (existingLabelId != null) {
-                    existingLabelId
-                } else {
-                    taskViewModel.insertLabelAndReturnId(com.priem.taskmanagementapp.data.entity.Label(name = labelName))
-                }
-
+                val labelId = taskViewModel.getLabelIdByName(labelName)
+                    ?: taskViewModel.insertLabelAndReturnId(Label(name = labelName))
                 taskViewModel.insertTaskLabelCrossRef(taskId, labelId)
             }
 
-
-            // followers
             val selectedFollowers = taskViewModel.taskFollowers.value.orEmpty()
             selectedFollowers.forEach { userId ->
                 taskViewModel.insertTaskFollowerCrossRef(taskId, userId)
             }
+            val followersList = selectedFollowers.mapNotNull { taskViewModel.getUserById(it) }
 
-            val followersList = selectedFollowers.mapNotNull { userId ->
-                taskViewModel.getUserById(userId)
-            }
-
-
-            // attachments
             val attachments = taskViewModel.taskAttachments.value.orEmpty()
             attachments.forEach { attachment ->
-                val taskAttachedFile = com.priem.taskmanagementapp.data.entity.TaskAttachedFile(
+                val file = TaskAttachedFile(
                     taskId = taskId,
                     fileName = attachment.fileName,
                     filePath = attachment.filePath,
                     fileSize = attachment.fileSize,
                     fileType = attachment.fileType
                 )
-                taskViewModel.insertTaskAttachedFile(taskAttachedFile)
+                taskViewModel.insertTaskAttachedFile(file)
             }
-            
-            saveTaskAsMessage(taskId,title,description,taskPriority,finalDueTimestamp, selectedLabels,followersList,attachments)
+
+            saveTaskAsMessage(taskId, title, description, taskPriority, finalDueTimestamp, selectedLabels, followersList, attachments)
 
             Toast.makeText(this@TaskEditorActivity, "Task Saved!", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
+
 
     private suspend fun saveTaskAsMessage(
         taskId: Long,

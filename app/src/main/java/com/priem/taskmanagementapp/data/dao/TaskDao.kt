@@ -23,6 +23,16 @@ interface TaskDao {
     @Delete
     suspend fun deleteTask(task: Task)
 
+    @Query("DELETE FROM task_labels WHERE taskId = :taskId")
+    suspend fun deleteAllLabelsForTask(taskId: Long)
+
+    @Query("DELETE FROM TaskFollowerCrossRef WHERE taskId = :taskId")
+    suspend fun deleteAllFollowersForTask(taskId: Long)
+
+    @Query("DELETE FROM task_attached_files WHERE taskId = :taskId")
+    suspend fun deleteAllFilesForTask(taskId: Long)
+
+
     @Query("SELECT * FROM tasks ORDER BY createdAt DESC")
     fun getAllTasks(): LiveData<List<Task>>
 

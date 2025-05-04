@@ -150,4 +150,32 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
         repository.insertMessage(message)
     }
 
+
+    // Task Related
+
+    fun updateTask(task: Task) {
+        viewModelScope.launch {
+            repository.updateTask(task)
+        }
+    }
+
+    fun deleteAllLabelsForTask(taskId: Long) {
+        viewModelScope.launch {
+            repository.deleteAllLabelsForTask(taskId)
+        }
+    }
+
+    fun deleteAllFollowersForTask(taskId: Long) {
+        viewModelScope.launch {
+            repository.deleteAllFollowersForTask(taskId)
+        }
+    }
+
+    fun deleteAllFilesForTask(taskId: Long) {
+        viewModelScope.launch {
+            repository.deleteAllFilesForTask(taskId)
+        }
+    }
+
+
 }
