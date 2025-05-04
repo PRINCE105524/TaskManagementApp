@@ -23,6 +23,11 @@ interface TaskDao {
     @Delete
     suspend fun deleteTask(task: Task)
 
+
+    @Query("UPDATE tasks SET messageId = :messageId WHERE taskId = :taskId")
+    suspend fun updateTaskMessageId(taskId: Long, messageId: Long)
+
+
     @Query("DELETE FROM task_labels WHERE taskId = :taskId")
     suspend fun deleteAllLabelsForTask(taskId: Long)
 
@@ -83,11 +88,17 @@ interface TaskDao {
 
     // Message related query
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertMessages(messages: List<Message>)
+    suspend fun insertMessages(messages: Message): Long
 
     @Query("SELECT * FROM messages ORDER BY timestamp DESC")
     fun getAllMessages(): LiveData<List<Message>>
 
+    @Query("UPDATE messages SET contentJson = :contentJson WHERE messageId = :messageId")
+    suspend fun updateMessageContentJson(messageId: Long, contentJson: String)
+
+
+    @Query("SELECT * FROM messages WHERE messageId = :id")
+    suspend fun getMessageById(id: Long): Message?
 
     // File related query
     @Insert(onConflict = OnConflictStrategy.REPLACE)

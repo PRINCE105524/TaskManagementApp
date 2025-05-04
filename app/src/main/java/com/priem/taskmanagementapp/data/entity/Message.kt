@@ -12,6 +12,6 @@ data class Message(
     val content: String,
     val timestamp: Long,
     val contentType: String = "TEXT", // TEXT or TASK
-    val contentJson: String? = null   // for storing task json
+    var contentJson: String? = null   // for storing task json
 )
 

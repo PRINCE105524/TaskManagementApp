@@ -132,6 +132,11 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
         return repository.insertTask(task)
     }
 
+    fun updateTaskMessageId(taskId: Long, messageId: Long) {
+        viewModelScope.launch {
+            repository.updateTaskMessageId(taskId, messageId)
+        }
+    }
 
     suspend fun insertLabelAndReturnId(label: Label): Long {
         return repository.insertLabelAndReturnId(label)
@@ -146,9 +151,16 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
     }
 
     // insert task message
-    suspend fun insertMessage(message: Message) {
-        repository.insertMessage(message)
+    suspend fun insertMessage(message: Message): Long {
+        return repository.insertMessage(message)
     }
+
+    fun updateMessageContentJson(messageId: Long, contentJson: String) {
+        viewModelScope.launch {
+            repository.updateMessageContentJson(messageId, contentJson)
+        }
+    }
+
 
 
     // Task Related

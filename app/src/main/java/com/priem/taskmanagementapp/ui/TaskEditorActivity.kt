@@ -103,7 +103,7 @@ class TaskEditorActivity : AppCompatActivity() {
             if (editingTaskData != null) {
                 taskId = editingTaskData!!.taskId
                 val updatedTask = Task(
-                    taskId = taskId.toInt(),
+                    taskId = taskId,
                     title = title,
                     description = description,
                     priority = taskPriority,
@@ -147,7 +147,9 @@ class TaskEditorActivity : AppCompatActivity() {
                 taskViewModel.insertTaskAttachedFile(file)
             }
 
-            saveTaskAsMessage(taskId, title, description, taskPriority, finalDueTimestamp, selectedLabels, followersList, attachments)
+            val messageId = saveTaskAsMessage(taskId, title, description, taskPriority, finalDueTimestamp, selectedLabels, followersList, attachments)
+            // Need to update the messageId of Task Table
+            taskViewModel.updateTaskMessageId(taskId, messageId)
 
             Toast.makeText(this@TaskEditorActivity, "Task Saved!", Toast.LENGTH_SHORT).show()
             finish()
@@ -164,9 +166,24 @@ class TaskEditorActivity : AppCompatActivity() {
         selectedLabels: List<String>,
         selectedFollowers: List<User>,
         attachments: List<Attachment>
-    ) {
+    ): Long {
+        val messageId = if (editingTaskData != null) {
+            editingTaskData!!.messageId  // 🧠 Reuse the original message ID
+        } else {
+            val newMessage = Message(
+                content = "TASK: $title",
+                timestamp = System.currentTimeMillis(),
+                chatId = 1,
+                senderId = 1,
+                contentType = "TASK",
+                contentJson = null
+            )
+            taskViewModel.insertMessage(newMessage)
+        }
+
         val finalTaskJson = buildTaskJson(
             taskId = taskId,
+            messageId = messageId!!,
             title = title,
             description = description,
             priority = taskPriority,
@@ -175,24 +192,19 @@ class TaskEditorActivity : AppCompatActivity() {
             followers = selectedFollowers,
             attachedMessages = buildList {
                 attachedMessageId?.let { add(it) }
-                //addAll(selectedAttachedMessageIds) // if you pick more later
             },
-            attachedFiles = attachments // empty for now or later real files
+            attachedFiles = attachments
         )
 
-        val newTaskMessage = Message(
-            content = "TASK: $title",
-            timestamp = System.currentTimeMillis(),
-            chatId = 1,
-            senderId = 1,
-            contentType = "TASK",
-            contentJson = finalTaskJson
-        )
-        taskViewModel.insertMessage(newTaskMessage)
+        // 🔁 Update existing message contentJson
+        taskViewModel.updateMessageContentJson(messageId, finalTaskJson)
+
+        return messageId
     }
 
     private fun buildTaskJson(
         taskId: Long,
+        messageId: Long,
         title: String,
         description: String,
         priority: String,
@@ -200,10 +212,11 @@ class TaskEditorActivity : AppCompatActivity() {
         labels: List<String>,
         followers: List<User>,
         attachedMessages: List<Long>,
-        attachedFiles: List<com.priem.taskmanagementapp.data.model.Attachment>?
+        attachedFiles: List<Attachment>?
     ): String {
         val taskData = com.priem.taskmanagementapp.data.model.TaskData(
             taskId = taskId,
+            messageId = messageId,
             title = title,
             description = description,
             priority = priority,

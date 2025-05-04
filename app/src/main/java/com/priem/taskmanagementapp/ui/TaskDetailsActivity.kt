@@ -37,6 +37,7 @@ class TaskDetailsActivity : AppCompatActivity() {
     private lateinit var attachmentsAdapter: AttachmentsAdapter
 
     private lateinit var taskData: TaskData
+    private var messageId: Long = -1L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,9 +79,28 @@ class TaskDetailsActivity : AppCompatActivity() {
     private fun loadTaskData() {
         val taskDataJson = intent.getStringExtra("taskDataJson")
         taskData = Gson().fromJson(taskDataJson, TaskData::class.java)
-
+        messageId = taskData.messageId!!
         bindTaskData()
     }
+
+    override fun onResume() {
+        super.onResume()
+        if (messageId != -1L) {
+            lifecycleScope.launch {
+                val dao = TaskDatabase.getDatabase(this@TaskDetailsActivity).taskDao()
+                val updatedMessage = dao.getMessageById(messageId)
+                val updatedTaskData = updatedMessage?.contentJson?.let {
+                    Gson().fromJson(it, TaskData::class.java)
+                }
+                updatedTaskData?.let {
+                    taskData = it
+                    bindTaskData()
+                }
+            }
+        }
+    }
+
+
 
     private fun bindTaskData() {
         textTaskTitle.text = taskData.title

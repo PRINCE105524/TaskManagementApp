@@ -2,6 +2,7 @@ package com.priem.taskmanagementapp.data.model
 
 data class TaskData(
     val taskId: Long,
+    val messageId: Long?,
     val title: String,
     val description: String,
     val priority: String,
